@@ -97,7 +97,7 @@ CREATE TABLE reports (
     content           text NOT NULL,
     status            report_status_enum NOT NULL DEFAULT 'in_process',
     created_at        timestamptz NOT NULL DEFAULT now(),
-    modification_date timestamptz NOT NULL DEFAULT now()
+    updated_at        timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE comments (
@@ -106,7 +106,7 @@ CREATE TABLE comments (
     user_id           uuid NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     content           text NOT NULL,
     created_at        timestamptz NOT NULL DEFAULT now(),
-    modification_date timestamptz NOT NULL DEFAULT now()
+    updated_at        timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE tle_history (

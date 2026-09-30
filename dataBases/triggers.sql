@@ -8,17 +8,17 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER observation_update()
-AFTER UPDATE ON observations
+CREATE TRIGGER observation_update
+BEFORE UPDATE ON observations
 FOR EACH ROW 
-EXECUTE FUCNTION trg_set_updated_date();
+EXECUTE FUNCTION trg_set_updated_date();
 
-CREATE TRIGGER trg_report_update()
+CREATE TRIGGER trg_report_update
 AFTER UPDATE ON reports
 FOR EACH ROW
 EXECUTE FUNCTION trg_set_updated_date();
 
-CREATE TRIGGER trg_comment_update()
+CREATE TRIGGER trg_comment_update
 AFTER UPDATE ON comments
 FOR EACH ROW
 EXECUTE FUNCTION trg_set_updated_date();
