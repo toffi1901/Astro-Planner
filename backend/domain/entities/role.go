@@ -1,6 +1,6 @@
 package entities
 
-type Role int
+type Role string
 
 const (
 	RoleGuest     Role = "guest"
