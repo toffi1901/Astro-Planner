@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"go-redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type Session struct {

@@ -1,4 +1,4 @@
-package auth
+package api
 
 import (
 	"errors"
@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+
+	authuc "github.com/toffi_1901/astro-planner/backend/auth"
 )
 
 type AuthHandler struct {
-	RegisterUC *auth.RegisterUseCase
-	LoginUC    *auth.LoginUseCase
+	RegisterUC *authuc.RegisterUseCase
+	LoginUC    *authuc.LoginUseCase
 }
 
 type RegisterInput struct {
@@ -65,7 +67,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.Auth.Register(r.Context(), input.Email, input.Password)
+	user, err := h.RegisterUC.Execute(r.Context(), input.Email, input.Password)
 	if err != nil {
 		problem(w, http.StatusInternalServerError, "registration failed")
 		return

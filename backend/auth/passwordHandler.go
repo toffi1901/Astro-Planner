@@ -13,6 +13,6 @@ func HashPassword(password string, pepper string) (string, error) {
 	}
 	return string(bytes), nil
 }
-func CheckPasswordHash(password, hash, pepper string) bool {
+func CheckPasswordHash(password, hash, pepper string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password+pepper))
 }

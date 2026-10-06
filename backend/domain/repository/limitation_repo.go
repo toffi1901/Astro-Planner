@@ -2,9 +2,10 @@ package repository
 
 import (
 	"context"
-	"go-redis"
 	"net"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type LimitRepository interface {
@@ -35,7 +36,7 @@ func NewLimiterRepository(rdb *redis.Client) *LimitsRepository {
 }
 
 func (r *LimitsRepository) IsBlocked(ctx context.Context, ip string) (bool, error) {
-	count, err := rdb.Get(ctx, "login_attempts"+ip).Bytes()
+	count, err := r.rdb.Get(ctx, "login_attempts"+ip).Int()
 	if err == redis.Nil {
 		return false, nil
 	}
@@ -46,7 +47,7 @@ func (r *LimitsRepository) IsBlocked(ctx context.Context, ip string) (bool, erro
 }
 
 func (r *LimitsRepository) Increment(ctx context.Context, ip net.IP) error {
-	key := "login_attempts" + ip
+	key := "login_attempts" + ip.String()
 	pipe := r.rdb.Pipeline()
 	pipe.Incr(ctx, key)
 	pipe.Expire(ctx, key, lockoutTime)
@@ -55,5 +56,5 @@ func (r *LimitsRepository) Increment(ctx context.Context, ip net.IP) error {
 }
 
 func (r *LimitsRepository) Reset(ctx context.Context, ip net.IP) error {
-	return r.rdb.Del(ctx, "login_attempts"+ip).Err()
+	return r.rdb.Del(ctx, "login_attempts"+ip.String()).Err()
 }

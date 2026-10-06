@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"go-redis"
-
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type IResetPasswdRepository interface {
@@ -34,15 +34,20 @@ func (r *ResetPasswdRepository) Create(ctx context.Context, userId string, ttl t
 	return token, nil
 
 }
+
 func (r *ResetPasswdRepository) Consume(ctx context.Context, token string) (string, error) {
-	key := "password_reset" + token
+	key := "password_reset:" + token
+
 	userID, err := r.rdb.Get(ctx, key).Result()
 	if err == redis.Nil {
-		return nil
+		return "", err
 	}
 	if err != nil {
-		return err
+		return "", err
 	}
-	r.rdb.Del(ctx, key).Err()
-	return UserID, nil
+
+	if err := r.rdb.Del(ctx, key).Err(); err != nil {
+		return "", err
+	}
+	return userID, nil
 }
