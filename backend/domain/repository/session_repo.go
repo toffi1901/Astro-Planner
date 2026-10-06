@@ -11,7 +11,6 @@ import (
 type Session struct {
 	UserID    string    `json:"user_id"`
 	Role      string    `json: "role"`
-	Auth      bool      `json: "is_authenticated"`
 	IPadress  string    `json: "ip_address"`
 	UserAgent string    `json:"user_agent"`
 	CreatedAt time.Time `json:"created_at"`
