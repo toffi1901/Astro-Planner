@@ -9,11 +9,11 @@ import (
 )
 
 type Session struct {
-	UserID    string    `json:"user_id"`
-	Role      string    `json: "role"`
-	IPadress  string    `json: "ip_address"`
-	UserAgent string    `json:"user_agent"`
-	CreatedAt time.Time `json:"created_at"`
+	UserID          string    `json:"user_id"`
+	Role            string    `json:"role"`
+	IPadress        string    `json:"ip_address"`
+	EnvironmentInfo string    `json:"user_agent"`
+	CreatedAt       time.Time `json:"created_at"`
 }
 
 type SessionRepository struct {

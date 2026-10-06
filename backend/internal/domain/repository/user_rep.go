@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"astro-planner/backend/domain/entities"
+	"astro-planner/backend/internal/entities"
 	"context"
 )
 

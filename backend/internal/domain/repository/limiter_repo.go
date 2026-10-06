@@ -8,18 +8,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type LimitRepository interface {
+type ILimitRepository interface {
 	isBlocked(ctx context.Context, ip net.IP) (bool, error)
 	Increment(ctx context.Context, ip net.IP) error
 	Reset(ctx context.Context, ip net.IP) error
-}
-
-type Limit struct {
-	UserID    string    `json:"user_id"`
-	Role      string    `json: "role"`
-	IPadress  string    `json: "ip_address"`
-	UserAgent string    `json:"user_agent"`
-	CreatedAt time.Time `json:"created_at"`
 }
 
 type LimitsRepository struct {
@@ -36,7 +28,7 @@ func NewLimiterRepository(rdb *redis.Client) *LimitsRepository {
 }
 
 func (r *LimitsRepository) IsBlocked(ctx context.Context, ip string) (bool, error) {
-	count, err := r.rdb.Get(ctx, "login_attempts"+ip).Int()
+	count, err := r.rdb.Get(ctx, "login_attempts:"+ip).Int()
 	if err == redis.Nil {
 		return false, nil
 	}
@@ -47,7 +39,7 @@ func (r *LimitsRepository) IsBlocked(ctx context.Context, ip string) (bool, erro
 }
 
 func (r *LimitsRepository) Increment(ctx context.Context, ip net.IP) error {
-	key := "login_attempts" + ip.String()
+	key := "login_attempts:" + ip.String()
 	pipe := r.rdb.Pipeline()
 	pipe.Incr(ctx, key)
 	pipe.Expire(ctx, key, lockoutTime)
@@ -56,5 +48,5 @@ func (r *LimitsRepository) Increment(ctx context.Context, ip net.IP) error {
 }
 
 func (r *LimitsRepository) Reset(ctx context.Context, ip net.IP) error {
-	return r.rdb.Del(ctx, "login_attempts"+ip.String()).Err()
+	return r.rdb.Del(ctx, "login_attempts:"+ip.String()).Err()
 }
