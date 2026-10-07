@@ -18,7 +18,7 @@ type ResetPasswdRepository struct {
 	rdb *redis.Client
 }
 
-func NewpResetPasswdRepository(rdb *redis.Client) *ResetPasswdRepository {
+func NewResetPasswdRepository(rdb *redis.Client) *ResetPasswdRepository {
 	return &ResetPasswdRepository{rdb: rdb}
 }
 

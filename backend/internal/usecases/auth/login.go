@@ -1,8 +1,8 @@
-package usecases
+package auth
 
 import (
 	"astro-planner/backend/internal/auth"
-	"astro-planner/backend/internal/domain/repository"
+	"astro-planner/backend/internal/repository"
 	"context"
 	"errors"
 	"net"

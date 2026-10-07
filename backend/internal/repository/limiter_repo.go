@@ -9,7 +9,7 @@ import (
 )
 
 type ILimitRepository interface {
-	isBlocked(ctx context.Context, ip net.IP) (bool, error)
+	IsBlocked(ctx context.Context, ip net.IP) (bool, error)
 	Increment(ctx context.Context, ip net.IP) error
 	Reset(ctx context.Context, ip net.IP) error
 }

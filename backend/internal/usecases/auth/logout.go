@@ -1,7 +1,7 @@
-package usecases
+package auth
 
 import (
-	"astro-planner/backend/internal/domain/repository"
+	"astro-planner/backend/internal/repository"
 	"context"
 )
 

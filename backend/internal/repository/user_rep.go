@@ -3,6 +3,8 @@ package repository
 import (
 	"astro-planner/backend/internal/entities"
 	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepository interface {

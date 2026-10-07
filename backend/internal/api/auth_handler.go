@@ -1,13 +1,10 @@
 package api
 
 import (
+	authuc "astro-planner/backend/internal/usecases/auth"
 	"errors"
-	"log/slog"
 	"net/http"
 	"regexp"
-	"time"
-
-	authuc "github.com/toffi_1901/astro-planner/backend/auth"
 )
 
 type AuthHandler struct {
@@ -20,24 +17,8 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
-type userDB struct {
-	ID    int
-	Email string
-	Salt  []byte
-	Hash  []byte
-	Role  Role
-}
-
 type UserOutput struct {
 	ID int `json:"id"`
-}
-
-func logging(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		slog.Info("request", "duration", time.Since(start))
-	})
 }
 
 var emailPattern = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
