@@ -72,6 +72,15 @@ func main() {
 		MaxAge:           300,
 	}))
 	r.Use(api.Logging)
+	fetchTLEUC := satuc.NewFetchTLEUseCase(satRepo)
+	go func() {
+		log.Println("Начинаю загрузку TLE данных...")
+		if err := fetchTLEUC.Execute(ctx); err != nil {
+			log.Println("Ошибка загрузки TLE:", err)
+		} else {
+			log.Println("TLE успешно загружены!")
+		}
+	}()
 
 	r.Post("/api/auth/register", authHandler.Register)
 	r.Post("/api/auth/login", authHandler.Login)
