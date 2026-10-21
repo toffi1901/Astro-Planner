@@ -42,6 +42,7 @@ func AuthMiddleware(sessions *repository.SessionRepository, secret string) func(
 			}
 			if claims["type"] != "access" {
 				problem(w, http.StatusUnauthorized, "invalid token type")
+				return
 			}
 			jti, _ := claims["jti"].(string)
 			userID, _ := claims["user_id"].(string)
