@@ -3,10 +3,22 @@ package api
 import (
 	"astro-planner/backend/internal/repository"
 	"net/http"
+	"strconv"
+	"time"
+
+	satuc "astro-planner/backend/internal/usecases/satellite"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type SatelliteHandler struct {
-	Repo *repository.SatelliteRepository
+	Repo      *repository.SatelliteRepository
+	PredictUC *satuc.PredictUseCase
+}
+
+type PredictRequest struct {
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
 }
 
 func (h *SatelliteHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -17,4 +29,35 @@ func (h *SatelliteHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, sats)
+}
+
+func (h *SatelliteHandler) Predict(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value("user_id").(string)
+	if userID == "" {
+		problem(w, http.StatusUnauthorized, "no user")
+		return
+	}
+
+	noradStr := chi.URLParam(r, "norad_id")
+	noradID, err := strconv.ParseInt(noradStr, 10, 64)
+	if err != nil {
+		problem(w, http.StatusBadRequest, "invalid norad_id")
+		return
+	}
+
+	var input PredictRequest
+	if !readJSON(w, r, &input) {
+		return
+	}
+	passes, err := h.PredictUC.Execute(r.Context(), userID, noradID, input.StartTime, input.EndTime)
+	if err != nil {
+		problem(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"satellite_id": noradID,
+		"passes":       passes,
+		"count":        len(passes),
+	})
 }

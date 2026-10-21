@@ -14,6 +14,7 @@ type SatelliteRepository struct {
 type IsatelliteRepository interface {
 	Save(ctx context.Context, sat *entities.Satellite) error
 	List(ctx context.Context) ([]*entities.Satellite, error)
+	GetByNoradID(ctx context.Context, noradID int64) (*entities.Satellite, error)
 }
 
 func NewSatelliteRepository(db *pgxpool.Pool) *SatelliteRepository {
@@ -53,4 +54,21 @@ func (r *SatelliteRepository) List(ctx context.Context) ([]*entities.Satellite, 
 		sats = append(sats, sat)
 	}
 	return sats, err
+}
+
+func (r *SatelliteRepository) GetByNoradID(ctx context.Context, noradID int64) (*entities.Satellite, error) {
+	sat := &entities.Satellite{}
+	err := r.db.QueryRow(ctx, `
+		SELECT norad_id, satellite_name, satellite_type, tle_line1, tle_line2, last_updated_tle, is_active
+		FROM satellites
+		WHERE norad_id = $1
+	`, noradID).Scan(
+		&sat.NoradID, &sat.Name, &sat.Type,
+		&sat.TLELine1, &sat.TLELine2,
+		&sat.LastUpdatedTLE, &sat.IsActive,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return sat, nil
 }

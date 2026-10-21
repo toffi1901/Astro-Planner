@@ -11,3 +11,8 @@ type Satellite struct {
 	LastUpdatedTLE time.Time `json: "last_updated_tle"`
 	IsActive       bool      `json: "is_active"`
 }
+
+type PredictRequest struct {
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+}
