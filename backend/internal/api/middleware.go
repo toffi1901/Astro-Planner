@@ -1,7 +1,7 @@
 package api
 
 import (
-	auth "astro-planner/backend/internal/auth"
+	authcrypto "astro-planner/backend/internal/auth"
 	"astro-planner/backend/internal/repository"
 	"context"
 	"log/slog"
@@ -35,10 +35,13 @@ func AuthMiddleware(sessions *repository.SessionRepository, secret string) func(
 				problem(w, http.StatusUnauthorized, "invalid token")
 				return
 			}
-			claims, err := auth.ValidateToken(parts[1], secret)
+			claims, err := authcrypto.ValidateToken(parts[1], secret)
 			if err != nil {
 				problem(w, http.StatusUnauthorized, "invalid token")
 				return
+			}
+			if claims["type"] != "access" {
+				problem(w, http.StatusUnauthorized, "invalid token type")
 			}
 			jti, _ := claims["jti"].(string)
 			userID, _ := claims["user_id"].(string)

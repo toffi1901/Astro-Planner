@@ -6,16 +6,35 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(userID, role, jti, secret string) (string, error) {
+type TokenPair struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+func GenerateToken(userID, role, jti, secret string) (*TokenPair, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"role":    role,
 		"jti":     jti,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-		"iat":     time.Now().Unix(),
+		"type":    "access",
+		"exp":     time.Now().Add(15 * time.Minute).Unix(),
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
+	if err != nil {
+		return nil, err
+	}
+	resfreshClaims := jwt.MapClaims{
+		"user_id": userID,
+		"role":    role,
+		"jti":     jti,
+		"type":    "refresh",
+		"exp":     time.Now().Add(7 * 24 * time.Hour).Unix(),
+	}
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, resfreshClaims).SignedString([]byte(secret))
+	if err != nil {
+		return nil, err
+	}
+	return &TokenPair{AccessToken: token, RefreshToken: refreshToken}, nil
 }
 
 func ValidateToken(tokenStr, secret string) (jwt.MapClaims, error) {

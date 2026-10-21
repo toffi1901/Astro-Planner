@@ -17,7 +17,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(dst); err != nil {
-		problem(w, 400, "invalid LSON")
+		problem(w, 400, "invalid JSON")
 		return false
 	}
 	if err := dec.Decode(new(any)); err != io.EOF {

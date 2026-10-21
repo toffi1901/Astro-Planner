@@ -14,7 +14,7 @@ FOR EACH ROW
 EXECUTE FUNCTION trg_set_updated_date();
 
 CREATE TRIGGER trg_report_update
-AFTER UPDATE ON reports
+BEFORE UPDATE ON reports
 FOR EACH ROW
 EXECUTE FUNCTION trg_set_updated_date();
 

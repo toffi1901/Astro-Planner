@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"astro-planner/backend/internal/auth"
+	authcrypto "astro-planner/backend/internal/auth"
 	"astro-planner/backend/internal/entities"
 	"astro-planner/backend/internal/repository"
 	"context"
@@ -17,7 +17,7 @@ func NewRegisterUseCase(users *repository.PostgresUserRepository, pepper string)
 }
 
 func (usecase *RegisterUseCase) Execute(ctx context.Context, email, password string) (*entities.User, error) {
-	hash, err := auth.HashPassword(password, usecase.Pepper)
+	hash, err := authcrypto.HashPassword(password, usecase.Pepper)
 	if err != nil {
 		return nil, err
 	}

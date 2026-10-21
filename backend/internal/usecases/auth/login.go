@@ -35,36 +35,36 @@ func NewLoginUseCase(users *repository.PostgresUserRepository,
 		JWTSecret: jwtSecret}
 }
 
-func (usecase *LoginUseCase) Execute(ctx context.Context, email, password string, ip net.IP, EnvironmentInfo string) (string, error) {
+func (usecase *LoginUseCase) Execute(ctx context.Context, email, password string, ip net.IP, EnvironmentInfo string) (*auth.TokenPair, error) {
 	blocked, err := usecase.Limiter.IsBlocked(ctx, ip.String())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if blocked {
-		return "", ErrTooManyAttempts
+		return nil, ErrTooManyAttempts
 	}
 	user, err := usecase.Users.GetByEmail(ctx, email)
 	if err != nil {
 		usecase.Limiter.Increment(ctx, ip)
-		return "", ErrInvalidData
+		return nil, ErrInvalidData
 	}
 
 	if err := auth.CheckPasswordHash(password, user.PasswordHash, usecase.Pepper); err != nil {
 		usecase.Limiter.Increment(ctx, ip)
-		return "", ErrInvalidData
+		return nil, ErrInvalidData
 	}
 	usecase.Limiter.Reset(ctx, ip)
 	jti := uuid.New().String()
 	session := repository.Session{
-		UserID:          user.ID,
-		Role:            user.Role,
-		IPadress:        ip.String(),
-		EnvironmentInfo: EnvironmentInfo,
-		CreatedAt:       time.Now(),
+		UserID:    user.ID,
+		Role:      user.Role,
+		IPadress:  ip.String(),
+		UserAgent: EnvironmentInfo,
+		CreatedAt: time.Now(),
 	}
 
-	if err := usecase.Sessions.Create(ctx, jti, session, 24*time.Hour); err != nil {
-		return "", err
+	if err := usecase.Sessions.Create(ctx, jti, session, 7*24*time.Hour); err != nil {
+		return nil, err
 	}
 	return auth.GenerateToken(session.UserID, user.Role, jti, usecase.JWTSecret)
 }
