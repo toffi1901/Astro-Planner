@@ -4,7 +4,9 @@ import (
 	"astro-planner/backend/internal/entities"
 	"astro-planner/backend/internal/repository"
 	"context"
+	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	satellite "github.com/joshuaferrara/go-satellite"
@@ -15,24 +17,29 @@ type PredictUseCase struct {
 	Users *repository.PostgresUserRepository
 }
 
+var (
+	ErrInvalidInterval  = errors.New("end_time must be after start_time")
+	ErrIntervalTooLarge = errors.New("interval too large (max 7 days)")
+	ErrNoCoordinates    = errors.New("user has no coordinates set")
+)
+
 func NewPredictUseCase(sats *repository.SatelliteRepository, users *repository.PostgresUserRepository) *PredictUseCase {
 	return &PredictUseCase{Sats: sats, Users: users}
 }
 
 func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID int64, start, end time.Time) ([]entities.Flight, error) {
 	if end.Before(start) {
-		return nil, fmt.Errorf("end_time must be after start_time")
+		return nil, ErrInvalidInterval
 	}
 	if end.Sub(start) > 7*24*time.Hour {
-		return nil, fmt.Errorf("interval too large (max 7 days)")
+		return nil, ErrIntervalTooLarge
 	}
-
 	user, err := uc.Users.GetByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
 	if user.Latitude == nil || user.Longitude == nil {
-		return nil, fmt.Errorf("user has no coordinates set")
+		return nil, ErrNoCoordinates
 	}
 	sat, err := uc.Sats.GetByNoradID(ctx, noradID)
 	if err != nil {
@@ -86,12 +93,24 @@ func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID in
 	return passes, nil
 }
 
-// упрощенная версия
-func lookAngles(pos satellite.Vector3, lat, lon float64, t time.Time) (alt, az float64) {
-	// Внимание: тут нужна нормальная математика топоцентрических координат.
-	_ = pos
-	_ = lat
-	_ = lon
-	_ = t
-	return 45.0, 180.0
+func lookAngles(eciPos satellite.Vector3, observerLat, observerLon float64, t time.Time,
+) (elevation, azimuth float64) {
+	// 1. Считаем юлианскую дату (астрономическое время)
+	jday := satellite.JDay(t.Year(), int(t.Month()), t.Day(), t.Hour(), t.Minute(), t.Second())
+
+	// 2. Координаты наблюдателя в градусах
+	obsCoords := satellite.LatLong{
+		Latitude:  observerLat * math.Pi / 180.0,
+		Longitude: observerLon * math.Pi / 180.0,
+	}
+
+	// 3. Высота наблюдателя над уровнем моря (в километрах).
+	// пока 0 для москвичей
+	const observerAlt = 0.0
+
+	// 4. магия: пересчёт ECI в углы обзора
+	looks := satellite.ECIToLookAngles(eciPos, obsCoords, observerAlt, jday)
+
+	// Возвращаем высоту над горизонтом и азимут
+	return looks.El * 180.0 / math.Pi, looks.Az * 180.0 / math.Pi
 }

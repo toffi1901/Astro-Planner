@@ -2,6 +2,7 @@ package api
 
 import (
 	"astro-planner/backend/internal/repository"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -41,18 +42,32 @@ func (h *SatelliteHandler) Predict(w http.ResponseWriter, r *http.Request) {
 	noradStr := chi.URLParam(r, "norad_id")
 	noradID, err := strconv.ParseInt(noradStr, 10, 64)
 	if err != nil {
-		problem(w, http.StatusBadRequest, "invalid norad_id")
-		return
+		if errors.Is(err, repository.ErrSatelliteNotFound) {
+			problem(w, http.StatusBadRequest, "satellite not found")
+			return
+		}
 	}
 
 	var input PredictRequest
 	if !readJSON(w, r, &input) {
 		return
 	}
+	if input.StartTime.IsZero() || input.EndTime.IsZero() {
+		problem(w, http.StatusBadRequest, "start_time and end_time are required")
+		return
+	}
 	passes, err := h.PredictUC.Execute(r.Context(), userID, noradID, input.StartTime, input.EndTime)
 	if err != nil {
-		problem(w, http.StatusInternalServerError, err.Error())
-		return
+		if errors.Is(err, repository.ErrSatelliteNotFound) {
+			problem(w, http.StatusNotFound, "satellite not found")
+			return
+		}
+		if errors.Is(err, satuc.ErrInvalidInterval) ||
+			errors.Is(err, satuc.ErrIntervalTooLarge) ||
+			errors.Is(err, satuc.ErrNoCoordinates) {
+			problem(w, http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{

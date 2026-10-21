@@ -3,7 +3,9 @@ package repository
 import (
 	"astro-planner/backend/internal/entities"
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -56,6 +58,8 @@ func (r *SatelliteRepository) List(ctx context.Context) ([]*entities.Satellite, 
 	return sats, err
 }
 
+var ErrSatelliteNotFound = errors.New("satellite not found")
+
 func (r *SatelliteRepository) GetByNoradID(ctx context.Context, noradID int64) (*entities.Satellite, error) {
 	sat := &entities.Satellite{}
 	err := r.db.QueryRow(ctx, `
@@ -67,6 +71,9 @@ func (r *SatelliteRepository) GetByNoradID(ctx context.Context, noradID int64) (
 		&sat.TLELine1, &sat.TLELine2,
 		&sat.LastUpdatedTLE, &sat.IsActive,
 	)
+	if err == pgx.ErrNoRows {
+		return nil, ErrSatelliteNotFound
+	}
 	if err != nil {
 		return nil, err
 	}
