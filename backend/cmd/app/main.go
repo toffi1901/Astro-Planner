@@ -12,6 +12,7 @@ import (
 	"astro-planner/backend/internal/repository"
 	"astro-planner/backend/internal/storage"
 	authuc "astro-planner/backend/internal/usecases/auth"
+	profileuc "astro-planner/backend/internal/usecases/profile"
 )
 
 func main() {
@@ -37,11 +38,16 @@ func main() {
 	registerUC := authuc.NewRegisterUseCase(userRepo, cfg.Pepper)
 	loginUC := authuc.NewLoginUseCase(userRepo, sessionRepo, limiterRepo, cfg.Pepper, cfg.JWTSecret)
 	logoutUC := authuc.NewLogoutUseCase(sessionRepo)
-
+	refreshUC := authuc.NewRefreshUseCase(sessionRepo, cfg.JWTSecret)
+	profileUC := profileuc.NewProfileUseCase(userRepo)
 	authHandler := &api.AuthHandler{
 		RegisterUC: registerUC,
 		LoginUC:    loginUC,
 		LogoutUC:   logoutUC,
+		RefreshUC:  refreshUC,
+	}
+	profileHandler := &api.ProfileHandler{
+		ProfileUC: profileUC,
 	}
 
 	r := chi.NewRouter()
@@ -49,10 +55,14 @@ func main() {
 
 	r.Post("/api/auth/register", authHandler.Register)
 	r.Post("/api/auth/login", authHandler.Login)
+	r.Post("/api/auth/refresh", authHandler.Refresh)
 
 	r.Group(func(r chi.Router) {
 		r.Use(api.AuthMiddleware(sessionRepo, cfg.JWTSecret))
 		r.Post("/api/auth/logout", authHandler.Logout)
+
+		r.Get("/api/profile", profileHandler.Get)
+		r.Put("/api/profile", profileHandler.UpdateLocation)
 	})
 
 	log.Println("Server on :" + cfg.Port)

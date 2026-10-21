@@ -10,4 +10,6 @@ type User struct {
 	Role         string
 	IsBlocked    bool
 	RegisterDate time.Time
+	Latitude     *float64
+	Longitude    *float64
 }

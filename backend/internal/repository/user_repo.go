@@ -3,6 +3,7 @@ package repository
 import (
 	"astro-planner/backend/internal/entities"
 	"context"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -11,6 +12,8 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*entities.User, error)
 	Create(ctx context.Context, user *entities.User) error
 	Delete(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id string) (*entities.User, error)
+	UpdateCoordinates(ctx context.Context, userId string, latitude, lotitude float64) error
 }
 
 type PostgresUserRepository struct {
@@ -52,5 +55,36 @@ func (r *PostgresUserRepository) Create(ctx context.Context, user *entities.User
 
 func (r *PostgresUserRepository) Delete(ctx context.Context, id string) error {
 	_, err := r.db.Exec(ctx, `DELETE FROM users WHERE user_id=$1`, id)
+	return err
+}
+
+func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*entities.User, error) {
+	user := &entities.User{}
+	err := r.db.QueryRow(ctx, `
+	SELECT user_id, name, email, password_hash, role, is_blocked, register_date, latitude, longitude
+	FROM users
+	WHERE user_id = $1`, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.PasswordHash,
+		&user.Role,
+		&user.IsBlocked,
+		&user.RegisterDate,
+		&user.Latitude,
+		&user.Longitude,
+	)
+	if err != nil {
+		log.Println("❌ ОШИБКА В БАЗЕ (GetByID):", err) // <-- ДОБАВИТЬ
+		return nil, err
+	}
+	return user, err
+}
+
+func (r *PostgresUserRepository) UpdateCoordinates(ctx context.Context, userId string, latitude, longitude float64) error {
+	_, err := r.db.Exec(ctx,
+		`UPDATE users  
+		SET latitude = $1, longitude = $2 
+		WHERE user_id = $3`, latitude, longitude, userId)
 	return err
 }

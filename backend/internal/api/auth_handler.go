@@ -110,7 +110,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.LogoutUC.Execute(r.Context(), jti); err != nil {
-		problem(w, http.StatusInternalServerError, "logout failed")
+		problem(w, http.StatusNoContent, "logout failed")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

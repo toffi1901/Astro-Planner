@@ -41,6 +41,7 @@ func AuthMiddleware(sessions *repository.SessionRepository, secret string) func(
 				return
 			}
 			if claims["type"] != "access" {
+				slog.Error("Middleware: invalid token type")
 				problem(w, http.StatusUnauthorized, "invalid token type")
 				return
 			}
@@ -49,6 +50,7 @@ func AuthMiddleware(sessions *repository.SessionRepository, secret string) func(
 			role, _ := claims["role"].(string)
 			_, err = sessions.Get(r.Context(), jti)
 			if err != nil {
+				slog.Error("Middleware: session not found", "jti", jti, "err", err)
 				problem(w, http.StatusUnauthorized, "session not found")
 				return
 			}
