@@ -75,7 +75,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*entit
 		&user.Longitude,
 	)
 	if err != nil {
-		log.Println("❌ ОШИБКА В БАЗЕ (GetByID):", err) // <-- ДОБАВИТЬ
+		log.Println("ОШИБКА В БАЗЕ (GetByID):", err) // <-- ДОБАВИТЬ
 		return nil, err
 	}
 	return user, err
@@ -86,5 +86,18 @@ func (r *PostgresUserRepository) UpdateCoordinates(ctx context.Context, userId s
 		`UPDATE users  
 		SET latitude = $1, longitude = $2 
 		WHERE user_id = $3`, latitude, longitude, userId)
+	return err
+}
+
+func (r *PostgresUserRepository) UpdatePassword(ctx context.Context, userId, newPasswordHash string) error {
+	_, err := r.db.Exec(ctx, `
+	UPDATE users
+	SET password_hash = $1
+	WHERE user_id = $2`, newPasswordHash, userId)
+	return err
+}
+
+func (r *PostgresUserRepository) UpdateRole(ctx context.Context, userId, newRole string) error {
+	_, err := r.db.Exec(ctx, `UPDATE users SET role = $1::role_enum WHERE user_id = $2`, newRole, userId)
 	return err
 }

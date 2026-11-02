@@ -63,3 +63,16 @@ func AuthMiddleware(sessions *repository.SessionRepository, secret string) func(
 		})
 	}
 }
+
+func RequireRole(role string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userRole, _ := r.Context().Value("role").(string)
+			if userRole != role {
+				problem(w, http.StatusForbidden, "access denied")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}

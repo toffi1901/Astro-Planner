@@ -29,7 +29,13 @@ func (r *SessionRepository) Create(ctx context.Context, jti string, s Session, t
 	if err != nil {
 		return err
 	}
-	return r.rdb.Set(ctx, "session:"+jti, data, ttl).Err()
+	pipe := r.rdb.Pipeline()
+	pipe.Set(ctx, "session:"+jti, data, ttl)
+	pipe.SAdd(ctx, "user_sessions:"+s.UserID, jti)
+	pipe.Expire(ctx, "user_sessions:"+s.UserID, ttl)
+
+	_, err = pipe.Exec(ctx)
+	return err
 }
 
 func (r *SessionRepository) Get(ctx context.Context, jti string) (*Session, error) {
@@ -46,5 +52,30 @@ func (r *SessionRepository) Get(ctx context.Context, jti string) (*Session, erro
 }
 
 func (r *SessionRepository) Delete(ctx context.Context, jti string) error {
+	sess, err := r.Get(ctx, jti)
+	if err == nil && sess != nil {
+		r.rdb.SRem(ctx, "user_sessions:"+sess.UserID, jti)
+	}
+
 	return r.rdb.Del(ctx, "session:"+jti).Err()
+}
+
+func (r *SessionRepository) DeleteAllUserSessions(ctx context.Context, userID string) error {
+	jtis, err := r.rdb.SMembers(ctx, "user_sessions:"+userID).Result()
+	if err != nil {
+		return err
+	}
+
+	if len(jtis) == 0 {
+		return nil
+	}
+
+	pipe := r.rdb.Pipeline()
+	for _, jti := range jtis {
+		pipe.Del(ctx, "session:"+jti)
+	}
+	pipe.Del(ctx, "user_sessions:"+userID)
+
+	_, err = pipe.Exec(ctx)
+	return err
 }

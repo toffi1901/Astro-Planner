@@ -7,7 +7,6 @@ import (
 )
 
 func TestUpdateLocationValidation(t *testing.T) {
-	// Нам не нужна база данных, потому что валидация происходит ДО запроса в БД
 	uc := &ProfileUseCase{}
 	ctx := context.Background()
 

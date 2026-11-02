@@ -11,6 +11,7 @@ import (
 	"astro-planner/backend/internal/config"
 	"astro-planner/backend/internal/repository"
 	"astro-planner/backend/internal/storage"
+	adminuc "astro-planner/backend/internal/usecases/admin"
 	authuc "astro-planner/backend/internal/usecases/auth"
 	profileuc "astro-planner/backend/internal/usecases/profile"
 	satuc "astro-planner/backend/internal/usecases/satellite"
@@ -44,8 +45,10 @@ func main() {
 	logoutUC := authuc.NewLogoutUseCase(sessionRepo)
 	refreshUC := authuc.NewRefreshUseCase(sessionRepo, cfg.JWTSecret)
 
-	profileUC := profileuc.NewProfileUseCase(userRepo)
+	profileUC := profileuc.NewProfileUseCase(userRepo, sessionRepo, cfg.Pepper)
 	predictUC := satuc.NewPredictUseCase(satRepo, userRepo)
+	adminUC := adminuc.NewAdminUseCase(userRepo, sessionRepo)
+	adminHandler := &api.AdminHandler{AdminUC: adminUC}
 
 	authHandler := &api.AuthHandler{
 		RegisterUC: registerUC,
@@ -93,8 +96,13 @@ func main() {
 		r.Post("/api/auth/logout", authHandler.Logout)
 		r.Get("/api/profile", profileHandler.Get)
 		r.Put("/api/profile", profileHandler.UpdateLocation)
+		r.Put("/api/profile/password", profileHandler.ChangePassword)
 
 		r.Post("/api/satellites/{norad_id}/predict", satHandler.Predict)
+		r.Group(func(r chi.Router) {
+			r.Use(api.RequireRole("admin"))
+			r.Patch("/api/admin/users/{id}/role", adminHandler.ChangeRole)
+		})
 	})
 
 	log.Println("Server on :" + cfg.Port)
