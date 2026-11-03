@@ -35,3 +35,20 @@ func (h *AdminHandler) ChangeRole(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "role updated"})
 }
+
+type BlockInput struct {
+	IsBlocked bool `json:"is_blocked"`
+}
+
+func (h *AdminHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
+	userId := chi.URLParam(r, "id")
+	var input BlockInput
+	if !readJSON(w, r, &input) {
+		return
+	}
+	if err := h.AdminUC.SetBlockStatus(r.Context(), userId, input.IsBlocked); err != nil {
+		problem(w, http.StatusInternalServerError, "failed to change block status")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "block status updated"})
+}

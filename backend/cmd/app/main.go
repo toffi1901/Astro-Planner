@@ -102,6 +102,7 @@ func main() {
 		r.Group(func(r chi.Router) {
 			r.Use(api.RequireRole("admin"))
 			r.Patch("/api/admin/users/{id}/role", adminHandler.ChangeRole)
+			r.Patch("/api/admin/users/{id}/block", adminHandler.BlockUser)
 		})
 	})
 

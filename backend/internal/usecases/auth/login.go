@@ -35,6 +35,8 @@ func NewLoginUseCase(users *repository.PostgresUserRepository,
 		JWTSecret: jwtSecret}
 }
 
+var ErrUserBlocked = errors.New("user account is blocked")
+
 func (usecase *LoginUseCase) Execute(ctx context.Context, email, password string, ip net.IP, EnvironmentInfo string) (*auth.TokenPair, error) {
 	blocked, err := usecase.Limiter.IsBlocked(ctx, ip.String())
 	if err != nil {
@@ -48,7 +50,9 @@ func (usecase *LoginUseCase) Execute(ctx context.Context, email, password string
 		usecase.Limiter.Increment(ctx, ip)
 		return nil, ErrInvalidData
 	}
-
+	if user.IsBlocked {
+		return nil, ErrUserBlocked
+	}
 	if err := auth.CheckPasswordHash(password, user.PasswordHash, usecase.Pepper); err != nil {
 		usecase.Limiter.Increment(ctx, ip)
 		return nil, ErrInvalidData

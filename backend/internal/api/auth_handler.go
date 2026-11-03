@@ -86,6 +86,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			problem(w, http.StatusTooManyRequests, "too many attempts")
 			return
 		}
+		if errors.Is(err, authuc.ErrUserBlocked) {
+			problem(w, http.StatusTooManyRequests, "account is blocked")
+			return
+		}
 		problem(w, http.StatusUnauthorized, "invalid credentials")
 		return
 	}

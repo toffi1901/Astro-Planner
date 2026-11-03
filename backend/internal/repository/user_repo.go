@@ -75,7 +75,7 @@ func (r *PostgresUserRepository) GetByID(ctx context.Context, id string) (*entit
 		&user.Longitude,
 	)
 	if err != nil {
-		log.Println("ОШИБКА В БАЗЕ (GetByID):", err) // <-- ДОБАВИТЬ
+		log.Println("ОШИБКА В БАЗЕ (GetByID):", err)
 		return nil, err
 	}
 	return user, err
@@ -99,5 +99,10 @@ func (r *PostgresUserRepository) UpdatePassword(ctx context.Context, userId, new
 
 func (r *PostgresUserRepository) UpdateRole(ctx context.Context, userId, newRole string) error {
 	_, err := r.db.Exec(ctx, `UPDATE users SET role = $1::role_enum WHERE user_id = $2`, newRole, userId)
+	return err
+}
+
+func (r *PostgresUserRepository) SetBlockUser(ctx context.Context, userId string, isBlocked bool) error {
+	_, err := r.db.Exec(ctx, `UPDATE users SET is_blocked = $1 WHERE user_id = $2`, isBlocked, userId)
 	return err
 }

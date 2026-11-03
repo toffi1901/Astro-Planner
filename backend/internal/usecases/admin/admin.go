@@ -30,3 +30,13 @@ func (uc *AdminUseCase) ChangeUserRole(ctx context.Context, userId, newRole stri
 	_ = uc.Sessions.DeleteAllUserSessions(ctx, userId)
 	return nil
 }
+
+func (uc *AdminUseCase) SetBlockStatus(ctx context.Context, userId string, isBlocked bool) error {
+	if err := uc.Users.SetBlockUser(ctx, userId, isBlocked); err != nil {
+		return err
+	}
+	if isBlocked {
+		_ = uc.Sessions.DeleteAllUserSessions(ctx, userId)
+	}
+	return nil
+}
