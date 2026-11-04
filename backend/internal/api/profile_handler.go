@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type ProfileHandler struct {
@@ -90,4 +92,27 @@ func (h *ProfileHandler) ChangePassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "password changed. please login again"})
+}
+
+func (h *ProfileHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
+	userId, _ := r.Context().Value("user_id").(string)
+	sessions, err := h.ProfileUC.GetSessions(r.Context(), userId)
+	if err != nil {
+		problem(w, http.StatusInternalServerError, "failed to grt sessions")
+		return
+	}
+	writeJSON(w, http.StatusOK, sessions)
+}
+
+func (h *ProfileHandler) RemoveSession(w http.ResponseWriter, r *http.Request) {
+	jti := chi.URLParam(r, "jti")
+	if jti == "" {
+		problem(w, http.StatusBadRequest, "missing jti")
+		return
+	}
+	if err := h.ProfileUC.RemoveSession(r.Context(), jti); err != nil {
+		problem(w, http.StatusInternalServerError, "failed to remove session")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

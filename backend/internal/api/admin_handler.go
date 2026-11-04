@@ -52,3 +52,12 @@ func (h *AdminHandler) BlockUser(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "block status updated"})
 }
+
+func (h *AdminHandler) RemoveAllSessions(w http.ResponseWriter, r *http.Request) {
+	userId := chi.URLParam(r, "id")
+	if err := h.AdminUC.Sessions.DeleteAllUserSessions(r.Context(), userId); err != nil {
+		problem(w, http.StatusInternalServerError, "failed to remove sessions")
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

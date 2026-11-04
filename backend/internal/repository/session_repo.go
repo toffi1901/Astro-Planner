@@ -9,6 +9,7 @@ import (
 )
 
 type Session struct {
+	JTI       string    `json:"jti"`
 	UserID    string    `json:"user_id"`
 	Role      string    `json:"role"`
 	IPadress  string    `json:"ip_address"`
@@ -78,4 +79,20 @@ func (r *SessionRepository) DeleteAllUserSessions(ctx context.Context, userID st
 
 	_, err = pipe.Exec(ctx)
 	return err
+}
+
+func (r *SessionRepository) ListByUser(ctx context.Context, userId string) ([]*Session, error) {
+	jtis, err := r.rdb.SMembers(ctx, "user_sessions:"+userId).Result()
+	if err != nil {
+		return nil, err
+	}
+	var sessions []*Session
+	for _, jti := range jtis {
+		sess, err := r.Get(ctx, jti)
+		if err == nil && sess != nil {
+			sess.JTI = jti
+			sessions = append(sessions, sess)
+		}
+	}
+	return sessions, nil
 }

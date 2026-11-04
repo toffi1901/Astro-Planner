@@ -64,3 +64,11 @@ func (uc *ProfileUseCase) ChangePassword(ctx context.Context, userId, oldPass, n
 	log.Printf("[EMAIL] Пользователю %s отправлено письмо: 'Ваш пароль был успешно изменён.'", user.Email) //заглушка
 	return nil
 }
+
+func (uc *ProfileUseCase) GetSessions(ctx context.Context, userId string) ([]*repository.Session, error) {
+	return uc.Sessions.ListByUser(ctx, userId)
+}
+
+func (uc *ProfileUseCase) RemoveSession(ctx context.Context, jti string) error {
+	return uc.Sessions.Delete(ctx, jti)
+}

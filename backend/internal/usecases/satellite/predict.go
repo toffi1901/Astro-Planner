@@ -67,11 +67,12 @@ func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID in
 			if currentPass == nil {
 				// Начало нового пролёта
 				currentPass = &entities.Flight{
-					NoradID:      sat.NoradID,
-					SatName:      sat.Name,
-					StartTime:    t,
-					StartAzimuth: az,
-					MaxAltitude:  alt,
+					NoradID:        sat.NoradID,
+					SatName:        sat.Name,
+					StartTime:      t,
+					StartAzimuth:   az,
+					MaxAltitude:    alt,
+					StartDirection: azimuthToDirection(az),
 				}
 			} else {
 				if alt > currentPass.MaxAltitude {
@@ -80,13 +81,18 @@ func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID in
 			}
 			currentPass.EndTime = t
 			currentPass.EndAzimuth = az
+			currentPass.EndDirection = azimuthToDirection(az)
 		} else if currentPass != nil {
+			//// Считаем яркость (упрощенная формула: чем выше спутник, тем он ярче)
+			// Для МКС базовая яркость около -1.8
+			currentPass.Magnitude = -1.8 + (90.0-currentPass.MaxAltitude)/10.0
 			// Спутник ушел за горизонт
 			passes = append(passes, *currentPass)
 			currentPass = nil
 		}
 	}
 	if currentPass != nil {
+		currentPass.Magnitude = -2.5 + (90.0-currentPass.MaxAltitude)/30.0
 		passes = append(passes, *currentPass)
 	}
 
@@ -113,4 +119,13 @@ func lookAngles(eciPos satellite.Vector3, observerLat, observerLon float64, t ti
 
 	// Возвращаем высоту над горизонтом и азимут
 	return looks.El * 180.0 / math.Pi, looks.Az * 180.0 / math.Pi
+}
+
+func azimuthToDirection(az float64) string {
+	directions := []string{"С", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ"}
+	index := int((az+22.5)/45.0) % 8
+	if index < 0 {
+		index += 8
+	}
+	return directions[index]
 }
