@@ -61,3 +61,18 @@ func (h *AdminHandler) RemoveAllSessions(w http.ResponseWriter, r *http.Request)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *AdminHandler) RevokeAllSessions(w http.ResponseWriter, r *http.Request) {
+	targetUserID := chi.URLParam(r, "id")
+	if targetUserID == "" {
+		problem(w, http.StatusBadRequest, "missing user id")
+		return
+	}
+
+	if err := h.AdminUC.RemoveAllUserSessions(r.Context(), targetUserID); err != nil {
+		problem(w, http.StatusInternalServerError, "failed to revoke sessions")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

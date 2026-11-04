@@ -40,3 +40,7 @@ func (uc *AdminUseCase) SetBlockStatus(ctx context.Context, userId string, isBlo
 	}
 	return nil
 }
+
+func (uc *AdminUseCase) RemoveAllUserSessions(ctx context.Context, userId string) error {
+	return uc.Sessions.DeleteAllUserSessions(ctx, userId)
+}

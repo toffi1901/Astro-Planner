@@ -104,6 +104,7 @@ func main() {
 			r.Patch("/api/admin/users/{id}/role", adminHandler.ChangeRole)
 			r.Patch("/api/admin/users/{id}/block", adminHandler.BlockUser)
 			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RemoveAllSessions)
+			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RevokeAllSessions)
 		})
 		r.Get("/api/profile/sessions", profileHandler.ListSessions)
 		r.Delete("/api/profile/sessions/{jti}", profileHandler.RemoveSession)
