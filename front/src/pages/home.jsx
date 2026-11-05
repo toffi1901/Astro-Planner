@@ -5,7 +5,7 @@ function Home() {
     <div>
         <h1>Astro Planner</h1>
         <p>Поставьте Софе 5А, она заслужила</p>
-        <Link to="/login">Попробуйте уже сейчас!</Link>
+        <Link to="/satellite">Попробуйте уже сейчас!</Link>
     </div>
   )
 }

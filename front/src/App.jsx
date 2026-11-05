@@ -4,6 +4,7 @@ import Home from './pages/home.jsx'
 import Login from './pages/login.jsx'
 import Satellite from './pages/satellite.jsx'
 import Registration from './pages/registration.jsx'
+import Profile from './pages/profile.jsx'
 
 const PrivateRoutes = () => {
   const { isAuth, loading } = useAuth()
@@ -22,6 +23,7 @@ function App() {
 
       <Route element={<PrivateRoutes/>}>
         <Route path="/satellite" element={<Satellite />}/>
+        <Route path="/profile" element={<Profile />}/>
       </Route>
     </Routes>
   );

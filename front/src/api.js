@@ -39,3 +39,9 @@ export async function reg(email, password) {
   if (!r.ok) throw new Error(data.error)
   return data
 }
+
+export async function apiFetch(path, options) {
+  let r = await query(path, options)
+  if (r.status == 401 && await refresh()) r = await query(path, options)
+  return r
+}

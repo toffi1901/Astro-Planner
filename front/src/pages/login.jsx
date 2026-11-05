@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
-import { login } from "../api";
+import { useAuth } from "../auth.jsx";
 
 function Login() {
   let navigate = useNavigate()
+  const { login } = useAuth()
 
   const [email, SetEmail] = useState('')
   const [password, SetPwd] = useState('')
