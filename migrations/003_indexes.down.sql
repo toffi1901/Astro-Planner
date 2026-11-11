@@ -1,0 +1,17 @@
+DROP INDEX IF EXISTS idx_users_email;
+DROP INDEX IF EXISTS idx_satellites_active;
+DROP INDEX IF EXISTS idx_forecasts_satellite_time;
+DROP INDEX IF EXISTS idx_forecasts_location;
+DROP INDEX IF EXISTS idx_favorites_user;
+DROP INDEX IF EXISTS idx_observations_user_date;
+DROP INDEX IF EXISTS idx_observations_satellite;
+DROP INDEX IF EXISTS idx_reports_user_status;
+DROP INDEX IF EXISTS idx_comments_satellite;
+DROP INDEX IF EXISTS idx_comments_user;
+DROP INDEX IF EXISTS idx_tle_history_satellite;
+DROP INDEX IF EXISTS idx_audit_log_admin;
+DROP INDEX IF EXISTS idx_audit_log_target;
+DROP INDEX IF EXISTS idx_notification_recipients_user;
+DROP INDEX IF EXISTS idx_notification_recipients_scheduled;
+DROP INDEX IF EXISTS idx_tags_user;
+DROP INDEX IF EXISTS idx_observation_tags_tag;
