@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"astro-planner/backend/internal/api"
+	"astro-planner/backend/internal/auth"
 	"astro-planner/backend/internal/config"
 	"astro-planner/backend/internal/repository"
 	"astro-planner/backend/internal/storage"
@@ -35,6 +36,7 @@ func main() {
 		log.Fatal("redis: ", err)
 	}
 	defer rdb.Close()
+	mailer := auth.NewMailer("mailpit", 1025, "noreply@astro-planner.local")
 
 	userRepo := repository.NewPostgresUserRepository(pool)
 	sessionRepo := repository.NewSessionRepository(rdb)
@@ -46,7 +48,7 @@ func main() {
 	logoutUC := authuc.NewLogoutUseCase(sessionRepo)
 	refreshUC := authuc.NewRefreshUseCase(sessionRepo, cfg.JWTSecret)
 
-	profileUC := profileuc.NewProfileUseCase(userRepo, sessionRepo, cfg.Pepper)
+	profileUC := profileuc.NewProfileUseCase(userRepo, sessionRepo, cfg.Pepper, mailer)
 	predictUC := satuc.NewPredictUseCase(satRepo, userRepo)
 	getUC := satuc.NewGetterUseCase(satRepo, userRepo)
 	adminUC := adminuc.NewAdminUseCase(userRepo, sessionRepo)
@@ -84,6 +86,7 @@ func main() {
 	fileHandler := &api.FileHandler{FileUC: fileUC}
 	celestialHandler := &api.CelestialHandler{Repo: celestialRepo,
 		S3: s3Client}
+
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// Перечисляем порты, на которых будет открываться твой фронтенд
@@ -108,6 +111,12 @@ func main() {
 	r.Post("/api/auth/register", authHandler.Register)
 	r.Post("/api/auth/login", authHandler.Login)
 	r.Post("/api/auth/refresh", authHandler.Refresh)
+	r.Get("/api/satellites", satHandler.List)
+
+	r.Post("/api/auth/register", authHandler.Register)
+	r.Post("/api/auth/login", authHandler.Login)
+	r.Post("/api/auth/refresh", authHandler.Refresh)
+	r.Get("/api/profile/password/confirm", profileHandler.ConfirmPasswordChange) // <-- Добавить сюда
 	r.Get("/api/satellites", satHandler.List)
 
 	r.Group(func(r chi.Router) {

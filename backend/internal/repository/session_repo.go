@@ -96,3 +96,34 @@ func (r *SessionRepository) ListByUser(ctx context.Context, userId string) ([]*S
 	}
 	return sessions, nil
 }
+
+// PendingPasswordChange хранит данные, ожидающие подтверждения по почте
+type PendingPasswordChange struct {
+	UserID       string `json:"user_id"`
+	PasswordHash string `json:"password_hash"`
+}
+
+// SavePasswordChangeToken сохраняет запрос на смену пароля в Redis на 15 минут
+func (r *SessionRepository) SavePasswordChangeToken(ctx context.Context, token string, data PendingPasswordChange) error {
+	bytes, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return r.rdb.Set(ctx, "pwd_change:"+token, bytes, 15*time.Minute).Err()
+}
+
+// GetAndDeletePasswordChangeToken достает данные по токену и сразу удаляет ключ (одноразовая ссылка)
+func (r *SessionRepository) GetAndDeletePasswordChangeToken(ctx context.Context, token string) (*PendingPasswordChange, error) {
+	key := "pwd_change:" + token
+	val, err := r.rdb.Get(ctx, key).Result()
+	if err != nil {
+		return nil, err
+	}
+	_ = r.rdb.Del(ctx, key).Err()
+
+	var data PendingPasswordChange
+	if err := json.Unmarshal([]byte(val), &data); err != nil {
+		return nil, err
+	}
+	return &data, nil
+}

@@ -63,6 +63,12 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - s3data:/data
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025" # В(http://localhost:8025)
+      - "1025:1025" 
+    restart: unless-stopped 
   
 
 

@@ -21,6 +21,7 @@ var (
 	ErrInvalidInterval  = errors.New("end_time must be after start_time")
 	ErrIntervalTooLarge = errors.New("interval too large (max 7 days)")
 	ErrNoCoordinates    = errors.New("user has no coordinates set")
+	ErrNoSatellites     = errors.New("no satellites found")
 )
 
 func NewPredictUseCase(sats *repository.SatelliteRepository, users *repository.PostgresUserRepository) *PredictUseCase {

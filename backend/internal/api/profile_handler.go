@@ -116,3 +116,20 @@ func (h *ProfileHandler) RemoveSession(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *ProfileHandler) ConfirmPasswordChange(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		problem(w, http.StatusBadRequest, "missing token")
+		return
+	}
+
+	if err := h.ProfileUC.ConfirmPasswordChange(r.Context(), token); err != nil {
+		problem(w, http.StatusBadRequest, "invalid or expired token")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "password changed. please login again",
+	})
+}
