@@ -13,6 +13,7 @@ import (
 	"astro-planner/backend/internal/storage"
 	adminuc "astro-planner/backend/internal/usecases/admin"
 	authuc "astro-planner/backend/internal/usecases/auth"
+	fileuc "astro-planner/backend/internal/usecases/file"
 	profileuc "astro-planner/backend/internal/usecases/profile"
 	satuc "astro-planner/backend/internal/usecases/satellite"
 
@@ -47,6 +48,7 @@ func main() {
 
 	profileUC := profileuc.NewProfileUseCase(userRepo, sessionRepo, cfg.Pepper)
 	predictUC := satuc.NewPredictUseCase(satRepo, userRepo)
+	getUC := satuc.NewGetterUseCase(satRepo, userRepo)
 	adminUC := adminuc.NewAdminUseCase(userRepo, sessionRepo)
 	adminHandler := &api.AdminHandler{AdminUC: adminUC}
 
@@ -62,8 +64,23 @@ func main() {
 	satHandler := &api.SatelliteHandler{
 		Repo:      satRepo,
 		PredictUC: predictUC,
+		GetUC:     getUC,
+	}
+	s3Client, err := storage.NewS3(
+		ctx,
+		"http://s3:9000",
+		"http://localhost:9000", // публичный URL для фронтенда (из браузера)
+		"minioadmin",
+		"change-me-long-password",
+		"astro-files",
+	)
+	if err != nil {
+		log.Fatal("s3: ", err)
 	}
 
+	fileRepo := repository.NewFileRepo(pool)
+	fileUC := fileuc.NewFileUseCase(fileRepo, s3Client)
+	fileHandler := &api.FileHandler{FileUC: fileUC}
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// Перечисляем порты, на которых будет открываться твой фронтенд
@@ -97,8 +114,9 @@ func main() {
 		r.Get("/api/profile", profileHandler.Get)
 		r.Put("/api/profile", profileHandler.UpdateLocation)
 		r.Put("/api/profile/password", profileHandler.ChangePassword)
-
+		r.Get("/api/satellites/filter", satHandler.GetSatellites)
 		r.Post("/api/satellites/{norad_id}/predict", satHandler.Predict)
+		r.Post("/api/files/upload", fileHandler.Upload)
 		r.Group(func(r chi.Router) {
 			r.Use(api.RequireRole("admin"))
 			r.Patch("/api/admin/users/{id}/role", adminHandler.ChangeRole)
@@ -106,6 +124,7 @@ func main() {
 			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RemoveAllSessions)
 			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RevokeAllSessions)
 		})
+
 		r.Get("/api/profile/sessions", profileHandler.ListSessions)
 		r.Delete("/api/profile/sessions/{jti}", profileHandler.RemoveSession)
 

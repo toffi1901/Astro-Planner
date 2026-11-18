@@ -1,12 +1,12 @@
 package api
 
 import (
-	"astro-planner/backend/internal/repository"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
+	"astro-planner/backend/internal/repository"
 	satuc "astro-planner/backend/internal/usecases/satellite"
 
 	"github.com/go-chi/chi/v5"
@@ -15,6 +15,7 @@ import (
 type SatelliteHandler struct {
 	Repo      *repository.SatelliteRepository
 	PredictUC *satuc.PredictUseCase
+	GetUC     *satuc.GetUseCase
 }
 
 type PredictRequest struct {
@@ -75,4 +76,29 @@ func (h *SatelliteHandler) Predict(w http.ResponseWriter, r *http.Request) {
 		"passes":       passes,
 		"count":        len(passes),
 	})
+}
+
+func (h *SatelliteHandler) GetSatellites(w http.ResponseWriter, r *http.Request) {
+	userID, _ := r.Context().Value("user_id").(string)
+	if userID == "" {
+		problem(w, http.StatusUnauthorized, "no user")
+		return
+	}
+	filter := r.URL.Query().Get("filter")
+	value := r.URL.Query().Get("value")
+	if (filter == "type" || filter == "name") && value == "" {
+		problem(w, http.StatusBadRequest, "value is required for this filter")
+		return
+	}
+	sats, err := h.GetUC.GetSatellites(r.Context(), userID, filter, value)
+	if err != nil {
+		if errors.Is(err, repository.ErrSatelliteNotFound) {
+			problem(w, http.StatusNotFound, err.Error())
+			return
+		}
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, sats)
+
 }

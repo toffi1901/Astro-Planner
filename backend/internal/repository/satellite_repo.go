@@ -79,3 +79,47 @@ func (r *SatelliteRepository) GetByNoradID(ctx context.Context, noradID int64) (
 	}
 	return sat, nil
 }
+
+func (r *SatelliteRepository) GetFaveSatellites(ctx context.Context, filter string, value string) ([]entities.Satellite, error) {
+	var rows pgx.Rows
+	var err error
+	switch filter {
+	case "":
+		rows, err = r.db.Query(ctx, `SELECT norad_id, satellite_name, satellite_type, tle_line1, tle_line2, last_updated_tle, is_active
+			FROM satellites
+			WHERE is_active=true
+			LIMIT 50`)
+	case "type":
+		rows, err = r.db.Query(ctx, `SELECT norad_id, satellite_name, satellite_type, tle_line1, tle_line2, last_updated_tle, is_active
+			FROM satellites
+			WHERE satellite_type=$1`, value)
+	case "name":
+		rows, err = r.db.Query(ctx, `SELECT norad_id, satellite_name, satellite_type, tle_line1, tle_line2, last_updated_tle, is_active
+			FROM satellites
+			WHERE satellite_name=$1`, value)
+	case "favorites":
+		rows, err = r.db.Query(ctx, `SELECT s.norad_id, s.satellite_name, s.satellite_type, s.tle_line1, s.tle_line2, s.last_updated_tle, s.is_active
+			FROM satellites s
+			JOIN favorites f ON s.norad_id = f.norad_id
+			WHERE f.user_id = $1`, value)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var result []entities.Satellite
+	for rows.Next() {
+		var sat entities.Satellite
+		err := rows.Scan(&sat.NoradID, &sat.Name, &sat.Type,
+			&sat.TLELine1, &sat.TLELine2,
+			&sat.LastUpdatedTLE, &sat.IsActive)
+		if err != nil {
+		}
+		result = append(result, sat)
+
+	}
+	if len(result) == 0 {
+		return nil, ErrSatelliteNotFound
+	}
+	return result, nil
+}

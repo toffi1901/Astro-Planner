@@ -160,3 +160,20 @@ CREATE TABLE observation_tags (
     tag_id         bigint NOT NULL REFERENCES tags(tag_id) ON DELETE CASCADE,
     PRIMARY KEY (observation_id, tag_id)
 );
+
+CREATE TABLE files (
+    file_id       bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id       uuid REFERENCES users(user_id) ON DELETE SET NULL, -- NULL для системных картинок справки
+    object_key    varchar(500) NOT NULL UNIQUE, -- Например: 'users/12334c4f.../avatar/550e8400.jpg'
+    original_name varchar(255) NOT NULL,
+    content_type  varchar(100) NOT NULL,        -- Например: 'image/jpeg', 'image/png'
+    size          bigint NOT NULL,              -- Размер в байтах
+    created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE users 
+    ADD COLUMN avatar_file_id bigint REFERENCES files(file_id) ON DELETE SET NULL;
+
+ALTER TABLE celestial_objects 
+    DROP COLUMN IF EXISTS url_image,
+    ADD COLUMN image_file_id bigint REFERENCES files(file_id) ON DELETE SET NULL;
