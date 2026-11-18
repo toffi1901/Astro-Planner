@@ -66,6 +66,7 @@ func main() {
 		PredictUC: predictUC,
 		GetUC:     getUC,
 	}
+
 	s3Client, err := storage.NewS3(
 		ctx,
 		"http://s3:9000",
@@ -77,10 +78,12 @@ func main() {
 	if err != nil {
 		log.Fatal("s3: ", err)
 	}
-
+	celestialRepo := repository.NewCelestialRepo(pool)
 	fileRepo := repository.NewFileRepo(pool)
 	fileUC := fileuc.NewFileUseCase(fileRepo, s3Client)
 	fileHandler := &api.FileHandler{FileUC: fileUC}
+	celestialHandler := &api.CelestialHandler{Repo: celestialRepo,
+		S3: s3Client}
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// Перечисляем порты, на которых будет открываться твой фронтенд
@@ -124,7 +127,7 @@ func main() {
 			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RemoveAllSessions)
 			r.Delete("/api/admin/users/{id}/sessions", adminHandler.RevokeAllSessions)
 		})
-
+		r.Get("/api/celestial-objects", celestialHandler.List)
 		r.Get("/api/profile/sessions", profileHandler.ListSessions)
 		r.Delete("/api/profile/sessions/{jti}", profileHandler.RemoveSession)
 

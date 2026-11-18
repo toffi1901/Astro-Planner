@@ -25,7 +25,16 @@ services:
     volumes:
       - redisdata:/data
     restart: unless-stopped
-    
+   
+  migrate:
+    image: migrate/migrate:v4.17.0
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database", "postgres://postgres:password@app-db:5432/astro?sslmode=disable", "up"]
+    depends_on:
+      app-db:
+        condition: service_healthy
+  
   app:
     build: .
     ports:
@@ -39,10 +48,26 @@ services:
     depends_on:
       app-db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully 
       redis:
         condition: service_started
+  s3:
+    image: pgsty/silo:latest  
+    ports:
+      - "9000:9000" 
+      - "9001:9001" 
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: change-me-long-password 
+    command: server /data --console-address ":9001"
+    volumes:
+      - s3data:/data
+  
 
 
 volumes:
   pgdata:
   redisdata:
+  s3data:
+  
