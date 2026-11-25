@@ -60,11 +60,28 @@ func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID in
 	for t := start; t.Before(end); t = t.Add(step) {
 		year, month, day := t.Date()
 		hour, min, sec := t.Clock()
+		jday := satellite.JDay(year, int(month), day, hour, min, sec)
 
 		pos, _ := satellite.Propagate(sgp4sat, year, int(month), day, hour, min, sec) //в ECI earth-Centered Inertial
 		alt, az := lookAngles(pos, observerLat, observerLon, t)
 		if alt > 10.0 {
 			// Спутник над горизонтом (> 10 градусов —  минимум для наблюдения)
+			// Переводим координаты спутника из космоса (ECI) в координаты на Земле
+			gmst := satellite.ThetaG_JD(jday) //Гринвичское среднее звёздное время
+
+			// 3. Магия: ECI -> Широта, Долгота, Высота
+			altitude, _, latLong := satellite.ECIToLLA(pos, gmst)
+
+			// 4. Переводим радианы в градусы (
+			latLongDeg := satellite.LatLongDeg(latLong)
+
+			// 5. Формируем точку траектории
+			point := entities.TrajectoryPoint{
+				Lat: latLongDeg.Latitude,
+				Lon: latLongDeg.Longitude,
+				Alt: altitude,
+			}
+
 			if currentPass == nil {
 				// Начало нового пролёта
 				currentPass = &entities.Flight{
@@ -74,11 +91,13 @@ func (uc *PredictUseCase) Execute(ctx context.Context, userID string, noradID in
 					StartAzimuth:   az,
 					MaxAltitude:    alt,
 					StartDirection: azimuthToDirection(az),
+					Trajectory:     []entities.TrajectoryPoint{point},
 				}
 			} else {
 				if alt > currentPass.MaxAltitude {
 					currentPass.MaxAltitude = alt
 				}
+				currentPass.Trajectory = append(currentPass.Trajectory, point)
 			}
 			currentPass.EndTime = t
 			currentPass.EndAzimuth = az
